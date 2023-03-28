@@ -43,3 +43,24 @@ Sitegeist:
       # The name of the language dimension. Usually needs no modification
       #
       languageDimensionName: 'language'
+
+Neos:
+  Neos:
+    userInterface:
+      translation:
+        autoInclude:
+          'Sitegeist.LostInTranslation': [ '*' ]
+    modules:
+      management:
+        submodules:
+          sitegeistLostInTranslationGlossaries:
+            controller: \Sitegeist\LostInTranslation\Controller\GlossaryController
+            action: 'index'
+            label: 'Sitegeist.LostInTranslation:GlossaryModule:module.label'
+            description: 'Sitegeist.LostInTranslation:GlossaryModule:module.description'
+            icon: 'icon-book'
+            additionalResources:
+              styleSheets:
+                - 'resource://Sitegeist.LostInTranslation/Public/Assets/main.bundle.css'
+              javaScripts:
+                - 'resource://Sitegeist.LostInTranslation/Public/Assets/main.bundle.js'

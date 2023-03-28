@@ -1,0 +1,19 @@
+privilegeTargets:
+
+  'Neos\Neos\Security\Authorization\Privilege\ModulePrivilege':
+    'Sitegeist.LostInTranslation:BackendModule.Glossary':
+      matcher: 'management/sitegeistLostInTranslationGlossaries'
+
+roles:
+
+  'Neos.Neos:Editor':
+    privileges:
+      -
+        privilegeTarget: 'Sitegeist.LostInTranslation:BackendModule.Glossary'
+        permission: GRANT
+
+  'Neos.Neos:RestrictedEditor':
+    privileges:
+      -
+        privilegeTarget: 'Sitegeist.LostInTranslation:BackendModule.Glossary'
+        permission: GRANT

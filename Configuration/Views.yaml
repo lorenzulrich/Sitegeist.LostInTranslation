@@ -1,0 +1,7 @@
+-
+  requestFilter: 'isPackage("Sitegeist.LostInTranslation") && isController("Glossary") && isFormat("html")'
+  viewObjectName: 'Neos\Fusion\View\FusionView'
+  options:
+    fusionPathPatterns:
+      - 'resource://Neos.Fusion/Private/Fusion'
+      - 'resource://Sitegeist.LostInTranslation/Private/FusionModule'
