@@ -14,8 +14,10 @@ use Neos\Flow\Security\Context;
 use Neos\Flow\Utility\Algorithms;
 use Neos\Fusion\View\FusionView;
 use Neos\Neos\Controller\Module\AbstractModuleController;
+use Psr\Http\Client\ClientExceptionInterface;
 use Sitegeist\LostInTranslation\Domain\Model\GlossaryEntry;
 use Sitegeist\LostInTranslation\Domain\Repository\GlossaryEntryRepository;
+use Sitegeist\LostInTranslation\Infrastructure\DeepL\DeepLTranslationService;
 
 class GlossaryController extends AbstractModuleController
 {
@@ -23,12 +25,10 @@ class GlossaryController extends AbstractModuleController
      * @var FusionView
      */
     protected $view;
-
     /**
      * @var string
      */
     protected $defaultViewObjectName = FusionView::class;
-
     /**
      * @var array
      */
@@ -42,18 +42,18 @@ class GlossaryController extends AbstractModuleController
         'json' => JsonView::class,
     ];
 
-    #[InjectConfiguration(path: "DeepLApi.glossary.languagePairs", package: "Sitegeist.LostInTranslation")]
-    protected array $languagePairs;
     #[InjectConfiguration(path: "DeepLApi.glossary.backendModule", package: "Sitegeist.LostInTranslation")]
     protected array $configuration;
 
     public function __construct(
-        private readonly GlossaryEntryRepository $glossaryEntryRepository,
         private readonly Context $securityContext,
+        private readonly GlossaryEntryRepository $glossaryEntryRepository,
+        private readonly DeepLTranslationService $deepLApi,
     ) {}
 
     /**
      * @throws Exception
+     * @throws ClientExceptionInterface
      */
     public function indexAction(): void
     {
@@ -61,6 +61,7 @@ class GlossaryController extends AbstractModuleController
         $this->view->assignMultiple([
             'glossaryJson' => $glossaryJson,
             'languages' => $this->extractLanguagesFromConfiguredLanguagePairs(),
+            'glossaryStatus' => $this->getGlossaryStatus(),
             'csrfToken' => $this->securityContext->getCsrfProtectionToken(),
         ]);
     }
@@ -68,7 +69,6 @@ class GlossaryController extends AbstractModuleController
     protected function getEntryAggregates(): array
     {
         $aggregates = [];
-        // ToDo search
         $entriesDb = $this->glossaryEntryRepository->findAll();
         /** @var GlossaryEntry $entryDb */
         foreach ($entriesDb as $entryDb) {
@@ -88,6 +88,7 @@ class GlossaryController extends AbstractModuleController
     /**
      * @throws IllegalObjectTypeException
      * @throws Exception
+     * @throws ClientExceptionInterface
      */
     public function createAction(): void
     {
@@ -198,6 +199,9 @@ class GlossaryController extends AbstractModuleController
         ]);
     }
 
+    /**
+     * @throws ClientExceptionInterface
+     */
     protected function extractLanguagesFromConfiguredLanguagePairs(): array
     {
         $languages = [];
@@ -209,9 +213,13 @@ class GlossaryController extends AbstractModuleController
         return $languages;
     }
 
+    /**
+     * @throws ClientExceptionInterface
+     */
     protected function addLanguageFromLanguagePairs(array &$languages, string $type): void
     {
-        foreach ($this->languagePairs as $languagePair) {
+        [$languagePairs] = $this->deepLApi->getLanguagePairs();
+        foreach ($languagePairs as $languagePair) {
             $language = $languagePair[$type] ?? null;
             if (!empty($language) && !in_array($language, $languages, true)) {
                 $languages[] = $language;
@@ -223,6 +231,59 @@ class GlossaryController extends AbstractModuleController
     {
         // ToDo validate ?
         return $this->configuration['sortByLanguage'];
+    }
+
+    /**
+     * @return array<string, DateTime>
+     */
+    protected function getDatabaseLanguagesLastModifiedAt(): array
+    {
+        $return = [];
+        $dateTimes = $this->glossaryEntryRepository->getLanguagesLastModifiedAt();
+        foreach ($dateTimes as $language => $dateTime) {
+            $return[$language] = $dateTime;
+        }
+        return $return;
+    }
+
+    /**
+     * @return array<string, string>
+     * @throws Exception
+     * @throws ClientExceptionInterface
+     */
+    protected function getGlossaryStatus(): array
+    {
+        $return = [];
+        $languagesLastModifiedAt = $this->getDatabaseLanguagesLastModifiedAt();
+
+        $glossaries = $this->deepLApi->getGlossaries();
+        foreach ($glossaries as $glossary) {
+
+            $sourceLang = strtoupper($glossary['source_lang']);
+            $targetLang = strtoupper($glossary['target_lang']);
+            $glossaryKey = $this->deepLApi->getInternalGlossaryKey($sourceLang, $targetLang);
+            $glossaryDateTime = new DateTime('@' . strtotime($glossary['creation_time']));
+            $sourceLangLastModifiedAt = $languagesLastModifiedAt[$sourceLang];
+            $targetLangLastModifiedAt = $languagesLastModifiedAt[$targetLang];
+
+            $glossaryIsOutdated = (
+                $glossaryDateTime < $sourceLangLastModifiedAt
+                || $glossaryDateTime < $targetLangLastModifiedAt
+            );
+
+            $return[$glossaryKey] = [
+                'sourceLang' => $sourceLang,
+                'targetLang' => $targetLang,
+                'creationDate' => $glossaryDateTime->format('d.m.Y H:i:s'),
+                'isOutdated' => $glossaryIsOutdated,
+                'canBeUsed' => $glossary['ready'],
+            ];
+
+        }
+
+        ksort($return);
+
+        return $return;
     }
 
 }

@@ -1,6 +1,7 @@
 prototype(Sitegeist.LostInTranslation:GlossaryController.Index) < prototype(Neos.Fusion:Component) {
     glossaryJson = '[]'
     languages = '[]'
+    glossaryStatus = '[]'
     csrfToken = ''
 
     renderer = afx`
@@ -9,6 +10,7 @@ prototype(Sitegeist.LostInTranslation:GlossaryController.Index) < prototype(Neos
                 <Sitegeist.LostInTranslation:Component.Glossary.App
                     glossaryJson={props.glossaryJson}
                     languages={props.languages}
+                    glossaryStatus={props.glossaryStatus}
                     csrfToken={props.csrfToken}
                 />
             </div>

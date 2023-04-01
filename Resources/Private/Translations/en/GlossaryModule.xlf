@@ -62,6 +62,34 @@
                 <source>Delete entry "{0}" ({1})?</source>
             </trans-unit>
 
+            <trans-unit id="status.headline">
+                <source>Glossary status</source>
+            </trans-unit>
+            <trans-unit id="status.glossary">
+                <source>Glossary</source>
+            </trans-unit>
+            <trans-unit id="status.lastUpdate">
+                <source>Last update</source>
+            </trans-unit>
+            <trans-unit id="status.usable">
+                <source>Usable?</source>
+            </trans-unit>
+            <trans-unit id="status.usable.yes">
+                <source>yes</source>
+            </trans-unit>
+            <trans-unit id="status.usable.no">
+                <source>no</source>
+            </trans-unit>
+            <trans-unit id="status.legend">
+                <source>Legend</source>
+            </trans-unit>
+            <trans-unit id="status.legend.isUpToDate">
+                <source>DeepL glossary is up to date</source>
+            </trans-unit>
+            <trans-unit id="status.legend.isOutdated">
+                <source>DeepL glossary is not yet up to date</source>
+            </trans-unit>
+
         </body>
     </file>
 </xliff>

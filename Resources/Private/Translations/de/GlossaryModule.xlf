@@ -77,6 +77,43 @@
                 <target>Eintrag "{0}" ({1}) löschen?</target>
             </trans-unit>
 
+            <trans-unit id="status.headline">
+                <source>Glossary status</source>
+                <target>Glossar Status</target>
+            </trans-unit>
+            <trans-unit id="status.glossary">
+                <source>Glossary</source>
+                <target>Glossar</target>
+            </trans-unit>
+            <trans-unit id="status.lastUpdate">
+                <source>Last update</source>
+                <target>Letztes Update</target>
+            </trans-unit>
+            <trans-unit id="status.usable">
+                <source>Usable?</source>
+                <target>Nutzbar?</target>
+            </trans-unit>
+            <trans-unit id="status.usable.yes">
+                <source>yes</source>
+                <target>ja</target>
+            </trans-unit>
+            <trans-unit id="status.usable.no">
+                <source>no</source>
+                <target>nein</target>
+            </trans-unit>
+            <trans-unit id="status.legend">
+                <source>Legend</source>
+                <target>Legende</target>
+            </trans-unit>
+            <trans-unit id="status.legend.isUpToDate">
+                <source>DeepL glossary is up to date</source>
+                <target>DeepL-Glossar ist aktuell</target>
+            </trans-unit>
+            <trans-unit id="status.legend.isOutdated">
+                <source>DeepL glossary is not yet up to date</source>
+                <target>DeepL-Glossar wurde noch nicht aktualisiert</target>
+            </trans-unit>
+
         </body>
     </file>
 </xliff>

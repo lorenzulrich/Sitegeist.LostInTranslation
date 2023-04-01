@@ -45,6 +45,19 @@ Sitegeist:
       languageDimensionName: 'language'
 
 Neos:
+  Flow:
+    log:
+      psr3:
+        'Neos\Flow\Log\PsrLoggerFactory':
+          glossaryCommandLogger:
+            default:
+              class: Neos\Flow\Log\Backend\FileBackend
+              options:
+                logFileURL: '%FLOW_PATH_DATA%Logs/Sitegeist_LostInTranslation_GlossaryCommand.log'
+                severityThreshold: '%LOG_DEBUG%'
+                createParentDirectories: true
+                maximumLogFileSize: 10485760
+                logFilesToKeep: 1
   Neos:
     userInterface:
       translation:

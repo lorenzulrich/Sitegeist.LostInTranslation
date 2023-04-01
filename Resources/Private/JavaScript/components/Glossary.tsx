@@ -7,7 +7,7 @@ import { Form } from './Form';
 import { GlossaryContext } from '../providers';
 import Filters, { Pagination } from './Filters';
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 10;
 
 export interface GlossaryProps {
     entries: {};

@@ -5,6 +5,7 @@ import { Glossary } from './components';
 import { GlossaryProvider, IntlProvider } from './providers';
 
 import '../Styles/styles.scss';
+import GlossaryStatus from "./components/GlossaryStatus";
 
 window.onload = async (): Promise<void> => {
     let NeosAPI = window.Typo3Neos || window.NeosCMS;
@@ -23,12 +24,7 @@ window.onload = async (): Promise<void> => {
 
     const entries: {} = JSON.parse(glossaryData.innerText);
     const languages: string[] = JSON.parse(glossaryApp.dataset.languages);
-
-    // ToDo remove logging
-    console.log('entries');
-    console.log(entries);
-    console.log('languages');
-    console.log(languages);
+    const glossaryStatus: string[] = JSON.parse(glossaryApp.dataset.glossaryStatus);
 
     const { csrfToken } = glossaryApp.dataset;
     const actions: {
@@ -56,6 +52,10 @@ window.onload = async (): Promise<void> => {
                     actions={actions}
                     translate={translate}
                     notificationHelper={Notification}
+                />
+                <GlossaryStatus
+                    data={glossaryStatus}
+                    translate={translate}
                 />
             </IntlProvider>
         </GlossaryProvider>,
