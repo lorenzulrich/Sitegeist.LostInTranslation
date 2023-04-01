@@ -17,7 +17,7 @@ class Version20230222100005 extends AbstractMigration
     {
         $this->abortIf($this->connection->getDatabasePlatform()->getName() != "mysql");
 
-        $this->addSql('CREATE TABLE sitegeist_lostintranslation_domain_model_glossaryentry (persistence_object_identifier VARCHAR(40) NOT NULL, aggregateidentifier VARCHAR(36) NOT NULL, lastmodificationdatetime DATETIME NOT NULL, glossarylanguage VARCHAR(2) NOT NULL, text VARCHAR(500) NOT NULL, INDEX entry (aggregateidentifier), UNIQUE INDEX sitegeist_lostintranslation_glossaryentry (entryidentifier, glossarylanguage), PRIMARY KEY(persistence_object_identifier)) DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE = InnoDB');
+        $this->addSql('CREATE TABLE sitegeist_lostintranslation_domain_model_glossaryentry (persistence_object_identifier VARCHAR(40) NOT NULL, aggregateidentifier VARCHAR(36) NOT NULL, lastmodificationdatetime DATETIME NOT NULL, glossarylanguage VARCHAR(2) NOT NULL, text VARCHAR(500) NOT NULL, INDEX aggregate (aggregateidentifier), UNIQUE INDEX sitegeist_lostintranslation_glossaryentry (aggregateidentifier, glossarylanguage), PRIMARY KEY(persistence_object_identifier)) DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE = InnoDB');
     }
 
     /**
