@@ -14,3 +14,13 @@ Sitegeist\LostInTranslation\Command\GlossaryCommandController:
         arguments:
           1:
             value: Sitegeist_LostInTranslation_GlossaryCommand
+
+Sitegeist\LostInTranslation\Controller\GlossaryController:
+  properties:
+    syncCommandStorage:
+      object:
+        factoryObjectName: Neos\Flow\Cache\CacheManager
+        factoryMethodName: getCache
+        arguments:
+          1:
+            value: Sitegeist_LostInTranslation_GlossaryCommand

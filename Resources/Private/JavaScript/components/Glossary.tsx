@@ -18,6 +18,7 @@ export interface GlossaryProps {
         create: string;
     };
     translate: (id: string, label: string, args?: any[]) => string;
+    updateGlossaryStatus: (data: {}) => void;
     notificationHelper: NeosNotification;
 }
 
@@ -52,11 +53,6 @@ export class Glossary extends React.Component<GlossaryProps, GlossaryState> {
             entries: props.entries,
             filteredEntries: props.entries,
         };
-    }
-
-    public componentDidMount(): void {
-        // ToDo do we need this?
-        // this.handleUpdateSearch('');
     }
 
     /**
@@ -181,14 +177,9 @@ export class Glossary extends React.Component<GlossaryProps, GlossaryState> {
         })
             .then(response => response.json())
             .then(data => {
-                const { success, entries, messages } = data;
+                const { success, entries, glossaryStatus, messages } = data;
                 if (success) {
-                    this.setState(
-                        {
-                            entries: entries,
-                        },
-                        this.refresh,
-                    );
+                    this.refreshListAndStatus(entries, glossaryStatus);
                 }
                 messages.forEach(({ title, message, severity }) => {
                     notificationHelper[severity.toLowerCase()](title || message, message);
@@ -225,8 +216,9 @@ export class Glossary extends React.Component<GlossaryProps, GlossaryState> {
      * Triggers a refresh with the current entry list.
      *
      * @param entries
+     * @param glossaryStatus
      */
-    private refreshList = (entries: {}): void => {
+    private refreshListAndStatus = (entries: {}, glossaryStatus: {}): void => {
         this.setState(
             {
                 entries: entries,
@@ -234,6 +226,7 @@ export class Glossary extends React.Component<GlossaryProps, GlossaryState> {
             },
             this.refresh,
         );
+        this.props.updateGlossaryStatus(glossaryStatus);
     };
 
     /**
@@ -296,8 +289,8 @@ export class Glossary extends React.Component<GlossaryProps, GlossaryState> {
                             translate={translate}
                             actions={actions}
                             notificationHelper={notificationHelper}
-                            handleNewEntry={this.refreshList}
-                            handleUpdatedEntry={this.refreshList}
+                            handleNewEntry={this.refreshListAndStatus}
+                            handleUpdatedEntry={this.refreshListAndStatus}
                             handleCancelAction={this.handleToggleForm}
                             idPrefix=""
                         />
@@ -353,8 +346,8 @@ export class Glossary extends React.Component<GlossaryProps, GlossaryState> {
                                                         translate={translate}
                                                         actions={actions}
                                                         notificationHelper={notificationHelper}
-                                                        handleNewEntry={this.refreshList}
-                                                        handleUpdatedEntry={this.refreshList}
+                                                        handleNewEntry={this.refreshListAndStatus}
+                                                        handleUpdatedEntry={this.refreshListAndStatus}
                                                         handleCancelAction={this.handleCancelAction}
                                                         idPrefix={'entry-' + index + '-'}
                                                     />

@@ -2,10 +2,10 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
 import { Glossary } from './components';
+import { GlossaryStatus } from "./components/GlossaryStatus";
 import { GlossaryProvider, IntlProvider } from './providers';
 
 import '../Styles/styles.scss';
-import GlossaryStatus from "./components/GlossaryStatus";
 
 window.onload = async (): Promise<void> => {
     let NeosAPI = window.Typo3Neos || window.NeosCMS;
@@ -25,6 +25,7 @@ window.onload = async (): Promise<void> => {
     const entries: {} = JSON.parse(glossaryData.innerText);
     const languages: string[] = JSON.parse(glossaryApp.dataset.languages);
     const glossaryStatus: string[] = JSON.parse(glossaryApp.dataset.glossaryStatus);
+    const glossaryStatusComponent = React.createRef();
 
     const { csrfToken } = glossaryApp.dataset;
     const actions: {
@@ -43,6 +44,10 @@ window.onload = async (): Promise<void> => {
         return I18n.translate(id, label, 'Sitegeist.LostInTranslation', 'GlossaryModule', args);
     };
 
+    const updateGlossaryStatus = (data) => {
+        glossaryStatusComponent.current.update(data);
+    }
+
     ReactDOM.render(
         <GlossaryProvider value={{ csrfToken }}>
             <IntlProvider translate={translate}>
@@ -51,9 +56,11 @@ window.onload = async (): Promise<void> => {
                     languages={languages}
                     actions={actions}
                     translate={translate}
+                    updateGlossaryStatus={updateGlossaryStatus}
                     notificationHelper={Notification}
                 />
                 <GlossaryStatus
+                    ref={glossaryStatusComponent}
                     data={glossaryStatus}
                     translate={translate}
                 />

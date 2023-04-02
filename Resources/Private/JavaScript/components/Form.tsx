@@ -17,8 +17,8 @@ export interface FormProps {
         update: string;
     };
     idPrefix: string;
-    handleNewEntry: (entries: {}) => void;
-    handleUpdatedEntry: (entries: {}) => void;
+    handleNewEntry: (entries: {}, glossaryStatus: {}) => void;
+    handleUpdatedEntry: (entries: {}, glossaryStatus: {}) => void;
     handleCancelAction: () => void;
 }
 
@@ -77,12 +77,12 @@ export class Form extends PureComponent<FormProps, FormState> {
 
         this.postEntry(aggregateIdentifier ? actions.update : actions.create, data)
             .then(data => {
-                const { messages, entries } = data;
+                const { messages, entries, glossaryStatus } = data;
 
                 if (aggregateIdentifier) {
-                    handleUpdatedEntry(entries);
+                    handleUpdatedEntry(entries, glossaryStatus);
                 } else {
-                    handleNewEntry(entries);
+                    handleNewEntry(entries, glossaryStatus);
 
                     // Reset form when an entry was created but not when it was just updated
                     this.setState({

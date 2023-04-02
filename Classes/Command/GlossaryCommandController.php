@@ -6,7 +6,7 @@ namespace Sitegeist\LostInTranslation\Command;
 use DateTime;
 use Neos\Cache\Exception;
 use Neos\Cache\Exception\InvalidDataException;
-use Neos\Cache\Frontend\StringFrontend;
+use Neos\Cache\Frontend\VariableFrontend;
 use Neos\Flow\Annotations\Inject;
 use Neos\Flow\Annotations\Scope;
 use Neos\Flow\Cli\CommandController;
@@ -23,7 +23,7 @@ class GlossaryCommandController extends CommandController
     protected const GLOSSARY_ENTRIES_SEPARATOR = "\n";
     protected const GLOSSARY_ENTRIES_FORMAT = 'tsv';
 
-    /** @var StringFrontend */
+    /** @var VariableFrontend */
     #[Inject]
     protected $storage;
     /** @var LoggerInterface */
@@ -55,8 +55,17 @@ class GlossaryCommandController extends CommandController
     {
         $currentTime = time();
 
-        $lastExecutionTimestamp = (int)$this->storage->get('lastExecutionTimestamp');
-        if ($fullSync || $lastExecutionTimestamp === 0) {
+        if ($this->storage->has('forceCompleteSync')) {
+            $completeSyncIsForced = (bool)$this->storage->get('forceCompleteSync');
+        } else {
+            $completeSyncIsForced = false;
+        }
+        if ($this->storage->has('lastExecutionTimestamp')) {
+            $lastExecutionTimestamp = (int)$this->storage->get('lastExecutionTimestamp');
+        } else {
+            $lastExecutionTimestamp = 0;
+        }
+        if ($fullSync || $completeSyncIsForced || $lastExecutionTimestamp === 0) {
             $lastExecutionTimestamp = 0;
         }
 
@@ -103,7 +112,8 @@ class GlossaryCommandController extends CommandController
 
         $this->updateDeepLGlossaries($glossaries);
 
-        $this->storage->set('lastExecutionTimestamp', (string)$currentTime);
+        $this->storage->set('lastExecutionTimestamp', $currentTime);
+        $this->storage->set('forceCompleteSync', false);
     }
 
     /**

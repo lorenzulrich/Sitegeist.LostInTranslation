@@ -6,6 +6,9 @@ namespace Sitegeist\LostInTranslation\Controller;
 use DateTime;
 use Exception;
 use InvalidArgumentException;
+use Neos\Cache\Exception\InvalidDataException;
+use Neos\Cache\Frontend\VariableFrontend;
+use Neos\Flow\Annotations\Inject;
 use Neos\Flow\Annotations\InjectConfiguration;
 use Neos\Flow\Mvc\View\JsonView;
 use Neos\Flow\Persistence\Exception\IllegalObjectTypeException;
@@ -21,6 +24,9 @@ use Sitegeist\LostInTranslation\Infrastructure\DeepL\DeepLTranslationService;
 
 class GlossaryController extends AbstractModuleController
 {
+    /** @var VariableFrontend */
+    #[Inject]
+    protected $syncCommandStorage;
     /**
      * @var FusionView
      */
@@ -123,6 +129,7 @@ class GlossaryController extends AbstractModuleController
         $this->view->assign('value', [
             'success' => true,
             'entries' => $this->getEntryAggregates(),
+            'glossaryStatus' => $this->getGlossaryStatus(),
             // ToDo do we need this?
             'messages' => $this->controllerContext->getFlashMessageContainer()->getMessagesAndFlush(),
         ]);
@@ -130,7 +137,10 @@ class GlossaryController extends AbstractModuleController
     }
 
     /**
+     * @throws ClientExceptionInterface
      * @throws IllegalObjectTypeException
+     * @throws \Neos\Cache\Exception
+     * @throws InvalidDataException
      * @noinspection PhpUnused
      */
     public function deleteAction(): void
@@ -145,9 +155,12 @@ class GlossaryController extends AbstractModuleController
         }
         $this->persistenceManager->persistAll();
 
+        $this->syncCommandStorage->set('forceCompleteSync', true);
+
         $this->view->assign('value', [
             'success' => true,
             'entries' => $this->getEntryAggregates(),
+            'glossaryStatus' => $this->getGlossaryStatus(),
             // ToDo do we need this?
             'messages' => $this->controllerContext->getFlashMessageContainer()->getMessagesAndFlush(),
         ]);
@@ -156,6 +169,7 @@ class GlossaryController extends AbstractModuleController
     /**
      * @throws UnknownObjectException
      * @throws IllegalObjectTypeException
+     * @throws ClientExceptionInterface
      */
     public function updateAction(): void
     {
@@ -194,6 +208,7 @@ class GlossaryController extends AbstractModuleController
         $this->view->assign('value', [
             'success' => true,
             'entries' => $this->getEntryAggregates(),
+            'glossaryStatus' => $this->getGlossaryStatus(),
             // ToDo do we need this?
             'messages' => $this->controllerContext->getFlashMessageContainer()->getMessagesAndFlush(),
         ]);
@@ -255,6 +270,11 @@ class GlossaryController extends AbstractModuleController
     {
         $return = [];
         $languagesLastModifiedAt = $this->getDatabaseLanguagesLastModifiedAt();
+        if ($this->syncCommandStorage->has('forceCompleteSync')) {
+            $completeSyncIsForced = (bool)$this->syncCommandStorage->get('forceCompleteSync');
+        } else {
+            $completeSyncIsForced = false;
+        }
 
         $glossaries = $this->deepLApi->getGlossaries();
         foreach ($glossaries as $glossary) {
@@ -267,7 +287,8 @@ class GlossaryController extends AbstractModuleController
             $targetLangLastModifiedAt = $languagesLastModifiedAt[$targetLang];
 
             $glossaryIsOutdated = (
-                $glossaryDateTime < $sourceLangLastModifiedAt
+                $completeSyncIsForced
+                || $glossaryDateTime < $sourceLangLastModifiedAt
                 || $glossaryDateTime < $targetLangLastModifiedAt
             );
 
