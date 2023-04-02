@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Sitegeist\LostInTranslation\Controller;
 
 use DateTime;
+use DateTimeZone;
 use Exception;
 use InvalidArgumentException;
 use Neos\Cache\Exception\InvalidDataException;
@@ -283,6 +284,7 @@ class GlossaryController extends AbstractModuleController
             $targetLang = strtoupper($glossary['target_lang']);
             $glossaryKey = $this->deepLApi->getInternalGlossaryKey($sourceLang, $targetLang);
             $glossaryDateTime = new DateTime('@' . strtotime($glossary['creation_time']));
+            $glossaryDateTime->setTimezone(new DateTimeZone(date_default_timezone_get()));
             $sourceLangLastModifiedAt = $languagesLastModifiedAt[$sourceLang];
             $targetLangLastModifiedAt = $languagesLastModifiedAt[$targetLang];
 
