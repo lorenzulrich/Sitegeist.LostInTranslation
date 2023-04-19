@@ -9,6 +9,7 @@ const MAX_INPUT_LENGTH = 500;
 export interface FormProps {
     aggregateIdentifier: string;
     languages: string[];
+    requiredLanguages: string[];
     texts: {};
     translate: (id: string, label: string, args?: any[]) => string;
     notificationHelper: NeosNotification;
@@ -157,7 +158,14 @@ export class Form extends PureComponent<FormProps, FormState> {
     };
 
     public render(): React.ReactElement {
-        const { translate, idPrefix, aggregateIdentifier, languages, handleCancelAction } = this.props;
+        const {
+            languages,
+            requiredLanguages,
+            idPrefix,
+            aggregateIdentifier,
+            translate,
+            handleCancelAction
+        } = this.props;
 
         const {
             texts,
@@ -179,7 +187,7 @@ export class Form extends PureComponent<FormProps, FormState> {
                                     type="text"
                                     onChange={this.handleInputChange}
                                     autoFocus={index == 0}
-                                    required={true}
+                                    required={requiredLanguages.includes(language)}
                                     placeholder={language + ' text'}
                                     autoComplete="off"
                                     autoCorrect="off"

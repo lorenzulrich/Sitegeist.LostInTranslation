@@ -12,6 +12,7 @@ const ITEMS_PER_PAGE = 10;
 export interface GlossaryProps {
     entries: {};
     languages: string[],
+    requiredLanguages: string[],
     actions: {
         delete: string;
         update: string;
@@ -24,7 +25,6 @@ export interface GlossaryProps {
 
 export interface GlossaryState {
     entries: {};
-    languages: string[],
     searchValue: string;
     currentPage: number;
     filteredEntries: {};
@@ -34,7 +34,6 @@ export interface GlossaryState {
 
 const initialState: GlossaryState = {
     entries: {},
-    languages: [],
     searchValue: '',
     currentPage: 0,
     filteredEntries: [],
@@ -49,7 +48,6 @@ export class Glossary extends React.Component<GlossaryProps, GlossaryState> {
         super(props);
         this.state = {
             ...initialState,
-            languages: props.languages,
             entries: props.entries,
             filteredEntries: props.entries,
         };
@@ -141,8 +139,8 @@ export class Glossary extends React.Component<GlossaryProps, GlossaryState> {
      * @param aggregateIdentifier
      */
     private handleDeleteAction = (event: FormEvent, aggregateIdentifier: string): void => {
-        const { entries, languages } = this.state;
-        const { notificationHelper, actions } = this.props;
+        const { entries} = this.state;
+        const { languages, actions, notificationHelper } = this.props;
         const { csrfToken } = this.context;
 
         event.preventDefault();
@@ -237,10 +235,15 @@ export class Glossary extends React.Component<GlossaryProps, GlossaryState> {
     }
 
     public render(): JSX.Element {
-        const { translate, actions, notificationHelper } = this.props;
-
         const {
             languages,
+            requiredLanguages,
+            actions,
+            translate,
+            notificationHelper
+        } = this.props;
+
+        const {
             filteredEntries,
             currentPage,
             searchValue,
@@ -285,6 +288,7 @@ export class Glossary extends React.Component<GlossaryProps, GlossaryState> {
                         <Form
                             aggregateIdentifier={null}
                             languages={languages}
+                            requiredLanguages={requiredLanguages}
                             texts={{}}
                             translate={translate}
                             actions={actions}
@@ -342,6 +346,7 @@ export class Glossary extends React.Component<GlossaryProps, GlossaryState> {
                                                     <Form
                                                         aggregateIdentifier={aggregateIdentifier}
                                                         languages={languages}
+                                                        requiredLanguages={requiredLanguages}
                                                         texts={aggregate}
                                                         translate={translate}
                                                         actions={actions}

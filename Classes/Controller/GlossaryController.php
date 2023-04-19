@@ -68,6 +68,7 @@ class GlossaryController extends AbstractModuleController
         $this->view->assignMultiple([
             'glossaryJson' => $glossaryJson,
             'languages' => $this->extractLanguagesFromConfiguredLanguagePairs(),
+            'requiredLanguages' => $this->extractRequiredLanguagesFromConfiguredLanguagePairs(),
             'glossaryStatus' => $this->getGlossaryStatus(),
             'csrfToken' => $this->securityContext->getCsrfProtectionToken(),
         ]);
@@ -114,7 +115,7 @@ class GlossaryController extends AbstractModuleController
         foreach ($languages as $language) {
 
             if (!array_key_exists($language, $texts)) {
-                throw new InvalidArgumentException("There is no text for language $language.");
+                continue;
             }
 
             $entry = new GlossaryEntry(
@@ -124,6 +125,7 @@ class GlossaryController extends AbstractModuleController
                 $texts[$language]
             );
             $this->glossaryEntryRepository->add($entry);
+
         }
         $this->persistenceManager->persistAll();
 
@@ -225,6 +227,19 @@ class GlossaryController extends AbstractModuleController
         // we iterate over all sources first to let them precede all target languages
         $this->addLanguageFromLanguagePairs($languages, 'source');
         $this->addLanguageFromLanguagePairs($languages, 'target');
+
+        return $languages;
+    }
+
+    /**
+     * @throws ClientExceptionInterface
+     */
+    protected function extractRequiredLanguagesFromConfiguredLanguagePairs(): array
+    {
+        $languages = [];
+
+        // by convention only source languages are required
+        $this->addLanguageFromLanguagePairs($languages, 'source');
 
         return $languages;
     }

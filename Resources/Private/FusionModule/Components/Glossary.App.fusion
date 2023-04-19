@@ -1,6 +1,7 @@
 prototype(Sitegeist.LostInTranslation:Component.Glossary.App) < prototype(Neos.Fusion:Component) {
     glossaryJson = '[]'
     languages = ${languages}
+    requiredLanguages = ${requiredLanguages}
     glossaryStatus = ${glossaryStatus}
     csrfToken = null
 
@@ -22,6 +23,7 @@ prototype(Sitegeist.LostInTranslation:Component.Glossary.App) < prototype(Neos.F
     renderer = afx`
         <div id="glossary-app"
              data-languages={Json.stringify(props.languages)}
+             data-required-languages={Json.stringify(props.requiredLanguages)}
              data-glossary-status={Json.stringify(props.glossaryStatus)}
              data-actions={Json.stringify(props.actions)}
              data-csrf-token={props.csrfToken}

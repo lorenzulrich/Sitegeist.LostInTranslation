@@ -24,6 +24,7 @@ window.onload = async (): Promise<void> => {
 
     const entries: {} = JSON.parse(glossaryData.innerText);
     const languages: string[] = JSON.parse(glossaryApp.dataset.languages);
+    const requiredLanguages: string[] = JSON.parse(glossaryApp.dataset.requiredLanguages);
     const glossaryStatus: string[] = JSON.parse(glossaryApp.dataset.glossaryStatus);
     const glossaryStatusComponent = React.createRef();
 
@@ -54,6 +55,7 @@ window.onload = async (): Promise<void> => {
                 <Glossary
                     entries={entries}
                     languages={languages}
+                    requiredLanguages={requiredLanguages}
                     actions={actions}
                     translate={translate}
                     updateGlossaryStatus={updateGlossaryStatus}

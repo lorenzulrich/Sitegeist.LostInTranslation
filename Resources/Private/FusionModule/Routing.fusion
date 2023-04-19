@@ -3,6 +3,7 @@ Sitegeist.LostInTranslation.GlossaryController {
         <Sitegeist.LostInTranslation:GlossaryController.Index
             glossaryJson={glossaryJson}
             languages={languages}
+            requiredLanguages={requiredLanguages}
             glossaryStatus={glossaryStatus}
             csrfToken={csrfToken}
         />
