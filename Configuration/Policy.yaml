@@ -21,20 +21,25 @@ roles:
   'Sitegeist.LostInTranslation:GlossaryEditor':
     label: Editor of DeepL glossaries
     description: Grants access to the DeepL glossary backend module.
-    parentRoles: [ 'Neos.Neos:AbstractEditor']
     privileges:
       -
         privilegeTarget: 'Sitegeist.LostInTranslation:BackendModule.Glossary'
         permission: GRANT
       -
-        privilegeTarget: 'Neos.Neos.Ui:Backend.Module.Content'
-        permission: DENY
+        privilegeTarget: 'Neos.Neos:Backend.Module.Management'
+        permission: GRANT
       -
-        privilegeTarget: 'Neos.Neos:Backend.Module.Management.Workspaces'
-        permission: DENY
+        privilegeTarget: 'Neos.Neos:Backend.GeneralAccess'
+        permission: GRANT
       -
-        privilegeTarget: 'Neos.Neos:Backend.Module.Management.History'
-        permission: DENY
+        privilegeTarget: 'Neos.Neos.Ui:Backend.ServiceAccess'
+        permission: GRANT
       -
-        privilegeTarget: 'Neos.Media.Browser:ManageAssets'
-        permission: DENY
+        privilegeTarget: 'Neos.Neos:Backend.Module.User'
+        permission: GRANT
+      -
+        privilegeTarget: 'Neos.Neos:Backend.Module.User.UserSettings'
+        permission: GRANT
+      -
+        privilegeTarget: 'Neos.Neos:Backend.Module.User.UserSettings.UpdateOwnSettings'
+        permission: GRANT
