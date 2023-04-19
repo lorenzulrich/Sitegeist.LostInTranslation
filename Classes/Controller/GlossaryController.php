@@ -282,6 +282,13 @@ class GlossaryController extends AbstractModuleController
 
             $sourceLang = strtoupper($glossary['source_lang']);
             $targetLang = strtoupper($glossary['target_lang']);
+            if (
+                !array_key_exists($sourceLang, $languagesLastModifiedAt)
+                || !array_key_exists($targetLang, $languagesLastModifiedAt)
+            ) {
+                continue;
+            }
+
             $glossaryKey = $this->deepLApi->getInternalGlossaryKey($sourceLang, $targetLang);
             $glossaryDateTime = new DateTime('@' . strtotime($glossary['creation_time']));
             $glossaryDateTime->setTimezone(new DateTimeZone(date_default_timezone_get()));
