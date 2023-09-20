@@ -4,27 +4,40 @@ declare(strict_types=1);
 namespace Sitegeist\LostInTranslation\Infrastructure\DeepL;
 
 use Exception;
+use Neos\Cache\Exception\InvalidDataException;
+use Neos\Cache\Frontend\StringFrontend;
+use Neos\Flow\Annotations\Inject;
 use Neos\Flow\Annotations\InjectConfiguration;
 use Neos\Flow\Annotations\Scope;
 use Neos\Flow\Http\Client\Browser;
 use Neos\Flow\Http\Client\CurlEngine;
+use Neos\Flow\Http\Client\CurlEngineException;
 use Neos\Http\Factories\ServerRequestFactory;
 use Neos\Http\Factories\StreamFactory;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
+use Sitegeist\LostInTranslation\Domain\ApiStatus;
 use Sitegeist\LostInTranslation\Domain\TranslationServiceInterface;
+use Sitegeist\LostInTranslation\Package;
 
 #[Scope("singleton")]
 class DeepLTranslationService implements TranslationServiceInterface
 {
     protected const INTERNAL_GLOSSARY_KEY_SEPARATOR = '-';
 
-    #[InjectConfiguration(path: "DeepLApi")]
+    #[InjectConfiguration(path: "DeepLApi", package: "Sitegeist.LostInTranslation")]
     protected array $settings;
     #[InjectConfiguration(path: "DeepLApi.glossary.languagePairs", package: "Sitegeist.LostInTranslation")]
     protected array $languagePairs;
+
+    /** @var StringFrontend */
+    #[Inject]
+    protected $apiKeyCache;
+    /** @var StringFrontend */
+    #[Inject]
+    protected $translationCache;
 
     protected string $baseUri;
     protected string $authenticationKey;
@@ -37,7 +50,7 @@ class DeepLTranslationService implements TranslationServiceInterface
 
     public function initializeObject(): void
     {
-        $deeplAuthenticationKey = new DeepLAuthenticationKey($this->settings['authenticationKey']);
+        $deeplAuthenticationKey = $this->getDeeplAuthenticationKey();
         $this->baseUri = $deeplAuthenticationKey->isFree() ? $this->settings['baseUriFree'] : $this->settings['baseUri'];
         $this->authenticationKey = $deeplAuthenticationKey->getAuthenticationKey();
     }
@@ -55,6 +68,13 @@ class DeepLTranslationService implements TranslationServiceInterface
         return $this->getBaseRequest('POST', 'translate')
             ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
         ;
+    }
+
+    protected function getStatusRequest(): RequestInterface
+    {
+        return $this->getBaseRequest('POST', 'usage')
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+            ;
     }
 
     protected function getGlossaryLanguagePairsRequest(): RequestInterface
@@ -125,9 +145,29 @@ class DeepLTranslationService implements TranslationServiceInterface
      * @param string|null $sourceLanguage
      * @return array
      * @throws ClientExceptionInterface
+     * @throws \Neos\Cache\Exception
+     * @throws InvalidDataException
      */
     public function translate(array $texts, string $targetLanguage, ?string $sourceLanguage = null): array
     {
+        $isCacheEnabled = $this->settings['enableCache'] ?? false;
+
+        $cachedEntries = [];
+
+        if ($isCacheEnabled) {
+            foreach ($texts as $i => $text) {
+                $entryIdentifier = $this->getEntryIdentifier($text, $targetLanguage, $sourceLanguage);
+                if ($this->translationCache->has($entryIdentifier)) {
+                    $cachedEntries[$i] = $this->translationCache->get($entryIdentifier);
+                    unset($texts[$i]);
+                }
+            }
+
+            if (empty($texts)) {
+                return $cachedEntries;
+            }
+        }
+
         // store keys and values separately for later reunion
         $keys = array_keys($texts);
         $values = array_values($texts);
@@ -139,7 +179,7 @@ class DeepLTranslationService implements TranslationServiceInterface
             $body .= '&source_lang=' . urlencode($sourceLanguage);
         }
         $body .= '&target_lang=' . urlencode($targetLanguage);
-        foreach($values as $part) {
+        foreach ($values as $part) {
             // All ignored terms will be wrapped in a <ignored> tag
             // which will be ignored by DeepL
             if (isset($this->settings['ignoredTerms']) && count($this->settings['ignoredTerms']) > 0) {
@@ -164,20 +204,54 @@ class DeepLTranslationService implements TranslationServiceInterface
             ->withBody($this->streamFactory->createStream($body))
         ;
 
-        $apiResponse = $this->sendRequest($apiRequest);
+        $browser = new Browser();
+        $engine = new CurlEngine();
+        $engine->setOption(CURLOPT_TIMEOUT, 0);
+        $browser->setRequestEngine($engine);
+
+        $apiResponse = null;
+        $attempt = 0;
+        $maximumAttempts = $this->settings['numberOfAttempts'];
+        do {
+            $attempt++;
+            try {
+                $apiResponse = $browser->sendRequest($apiRequest);
+                break;
+            } catch (CurlEngineException) {
+                if ($attempt === $maximumAttempts) {
+                    return $texts;
+                }
+
+                sleep(1);
+                continue;
+            }
+        } while ($attempt <= $maximumAttempts);
 
         if ($apiResponse->getStatusCode() == 200) {
             $returnedData = json_decode($apiResponse->getBody()->getContents(), true);
             if (is_null($returnedData)) {
-                return $texts;
+                return array_replace($texts, $cachedEntries);
             }
             $translations = array_map(
-                function($part) {
+                function ($part) {
                     return preg_replace('/(<ignore>|<\/ignore>)/i', '', $part['text']);
                 },
                 $returnedData['translations']
             );
-            return array_combine($keys, $translations);
+
+            $translationWithOriginalIndex = array_combine($keys, $translations);
+
+            if ($isCacheEnabled) {
+                foreach ($translationWithOriginalIndex as $i => $translatedString) {
+                    $originalString = $texts[$i];
+                    $this->translationCache->set($this->getEntryIdentifier($originalString, $targetLanguage, $sourceLanguage), $translatedString);
+                }
+            }
+
+            $mergedTranslatedStrings = array_replace($translationWithOriginalIndex, $cachedEntries);
+            ksort($mergedTranslatedStrings);
+
+            return $mergedTranslatedStrings;
         } else {
             if ($apiResponse->getStatusCode() === 403) {
                 $this->logger->critical('Your DeepL API credentials are either wrong, or you don\'t have access to the requested API.');
@@ -193,8 +267,59 @@ class DeepLTranslationService implements TranslationServiceInterface
             } else {
                 $this->logger->warning('Unexpected status from Deepl API', ['status' => $apiResponse->getStatusCode()]);
             }
-            return $texts;
+
+            return array_replace($texts, $cachedEntries);
         }
+    }
+
+    /**
+     * @throws ClientExceptionInterface
+     */
+    public function getStatus(): ApiStatus
+    {
+        $hasSettingsKey = (bool)$this->settings['authenticationKey'];
+        $hasCustomKey = $this->apiKeyCache->has(Package::API_KEY_CACHE_ID);
+
+        try {
+            $deeplAuthenticationKey = $this->getDeeplAuthenticationKey();
+
+            $apiRequest = $this->getStatusRequest();
+
+            $browser = new Browser();
+            $engine = new CurlEngine();
+            $engine->setOption(CURLOPT_TIMEOUT, 0);
+            $browser->setRequestEngine($engine);
+
+            $apiResponse = $browser->sendRequest($apiRequest);
+
+
+            if ($apiResponse->getStatusCode() == 200) {
+                $json = json_decode($apiResponse->getBody()->getContents(), true);
+                return new ApiStatus(true, $json['character_count'], $json['character_limit'], $hasSettingsKey, $hasCustomKey, $deeplAuthenticationKey->isFree());
+            } else {
+                return new ApiStatus(false, 0, 0, $hasSettingsKey, $hasCustomKey, $deeplAuthenticationKey->isFree());
+            }
+        } catch (Exception) {
+            return new ApiStatus(false, 0, 0, $hasSettingsKey, $hasCustomKey, false);
+        }
+    }
+
+    protected function getDeeplAuthenticationKey(): DeepLAuthenticationKey
+    {
+        $customKey = $this->apiKeyCache->get(Package::API_KEY_CACHE_ID) ?: null;
+        $settingsKey = $this->settings['authenticationKey'] ?? null;
+        return new DeepLAuthenticationKey($customKey ?? $settingsKey);
+    }
+
+    /**
+     * @param  string  $text
+     * @param  string  $targetLanguage
+     * @param  string|null  $sourceLanguage
+     * @return string
+     */
+    protected function getEntryIdentifier(string $text, string $targetLanguage, string $sourceLanguage = null): string
+    {
+        return sha1($text . $targetLanguage . $sourceLanguage);
     }
 
     /**
@@ -335,5 +460,4 @@ class DeepLTranslationService implements TranslationServiceInterface
 
         return [$languagePairs, $limitToLanguagesUpdated];
     }
-
 }
