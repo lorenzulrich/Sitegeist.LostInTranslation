@@ -49,6 +49,26 @@ class GlossaryEntryRepository extends Repository
     }
 
     /**
+     * @param string $text
+     * @return GlossaryEntry[]
+     */
+    public function findByTextAndLanguage(string $text, string $language): array
+    {
+        $query = $this->createQuery();
+        $queryBuilder = $query->getQueryBuilder();
+
+        $result = $queryBuilder
+            ->select('e.glossaryLanguage')
+            ->where('e.text = :text')
+            ->andWhere('e.glossaryLanguage = :language')
+            ->setParameter('text', $text, Types::STRING)
+            ->setParameter('language', $language, Types::STRING)
+            ->getQuery()
+            ->execute();
+        return $result;
+    }
+
+    /**
      * @return string[]
      */
     public function findLanguagesThatRequireSyncing(DateTime $modifiedSince): array

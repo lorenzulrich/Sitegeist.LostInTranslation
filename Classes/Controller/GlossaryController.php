@@ -9,6 +9,7 @@ use Exception;
 use InvalidArgumentException;
 use Neos\Cache\Exception\InvalidDataException;
 use Neos\Cache\Frontend\VariableFrontend;
+use Neos\Error\Messages\Message;
 use Neos\Flow\Annotations\Inject;
 use Neos\Flow\Annotations\InjectConfiguration;
 use Neos\Flow\Mvc\View\JsonView;
@@ -110,6 +111,15 @@ class GlossaryController extends AbstractModuleController
             throw new InvalidArgumentException('Create action must not have an aggregateIdentifier set.');
         }
         $aggregateIdentifier = Algorithms::generateUUID();
+
+
+        foreach ($texts as $language => $text) {
+            if (!empty($this->glossaryEntryRepository->findByTextAndLanguage($text, $language))) {
+                throw new InvalidArgumentException(sprintf('Text "%s" already exists with language "%s".', $text, $language));
+            }
+        }
+
+        $this->addErrorFlashMessage();
 
         $languages = $this->extractLanguagesFromConfiguredLanguagePairs();
         foreach ($languages as $language) {
