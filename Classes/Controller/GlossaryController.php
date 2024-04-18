@@ -114,7 +114,7 @@ class GlossaryController extends AbstractModuleController
 
 
         foreach ($texts as $language => $text) {
-            if ($this->glossaryEntryRepository->findByTextAndLanguage($text, $language)) {
+            if ($this->glossaryEntryRepository->isTextInGlossary($text, $language)) {
                 throw new InvalidArgumentException(sprintf('Text "%s" already exists with language "%s".', $text, $language));
             }
         }

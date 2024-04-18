@@ -48,10 +48,7 @@ class GlossaryEntryRepository extends Repository
         return $query->execute()->toArray();
     }
 
-    /**
-     * @return GlossaryEntry[]
-     */
-    public function findByTextAndLanguage(string $text, string $language): bool
+    public function isTextInGlossary(string $text, string $glossaryLanguage): bool
     {
         $query = $this->createQuery();
         $queryBuilder = $query->getQueryBuilder();
@@ -61,7 +58,7 @@ class GlossaryEntryRepository extends Repository
             ->where('e.text = :text')
             ->andWhere('e.glossaryLanguage = :language')
             ->setParameter('text', $text, Types::STRING)
-            ->setParameter('language', $language, Types::STRING)
+            ->setParameter('language', $glossaryLanguage, Types::STRING)
             ->groupBy('e.glossaryLanguage')
             ->getQuery()
             ->execute();
