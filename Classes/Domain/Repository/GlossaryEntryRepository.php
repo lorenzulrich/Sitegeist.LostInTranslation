@@ -49,23 +49,24 @@ class GlossaryEntryRepository extends Repository
     }
 
     /**
-     * @param string $text
      * @return GlossaryEntry[]
      */
-    public function findByTextAndLanguage(string $text, string $language): array
+    public function findByTextAndLanguage(string $text, string $language): bool
     {
         $query = $this->createQuery();
         $queryBuilder = $query->getQueryBuilder();
 
         $result = $queryBuilder
-            ->select('e.glossaryLanguage')
+            ->select('count(e.glossaryLanguage)')
             ->where('e.text = :text')
             ->andWhere('e.glossaryLanguage = :language')
             ->setParameter('text', $text, Types::STRING)
             ->setParameter('language', $language, Types::STRING)
+            ->groupBy('e.glossaryLanguage')
             ->getQuery()
             ->execute();
-        return $result;
+
+        return (bool) $result;
     }
 
     /**
