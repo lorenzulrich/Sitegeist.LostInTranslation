@@ -43,7 +43,22 @@ Sitegeist:
       # can significantly slow down your page or even
       # lead to timeouts. Use with care!
       #
-      enableCache: true
+      # TODO
+      enableCache: false
+
+      glossary:
+        backendModule: []
+          #
+          # The language to sort the glossary by
+          #
+          # sortByLanguage: 'DE'
+        #
+        # Configure a pair for each combination of languages you need a glossary for
+        #
+        languagePairs: []
+        # -
+        #  source: 'EN'
+        #  target: 'DE'
 
     nodeTranslation:
       #
@@ -72,3 +87,17 @@ Sitegeist:
       skipAuthorizationChecks: false
 
 
+Neos:
+  Flow:
+    log:
+      psr3:
+        'Neos\Flow\Log\PsrLoggerFactory':
+          glossaryCommandLogger:
+            default:
+              class: Neos\Flow\Log\Backend\FileBackend
+              options:
+                logFileURL: '%FLOW_PATH_DATA%Logs/Sitegeist_LostInTranslation_GlossaryCommand.log'
+                severityThreshold: '%LOG_DEBUG%'
+                createParentDirectories: true
+                maximumLogFileSize: 10485760
+                logFilesToKeep: 1

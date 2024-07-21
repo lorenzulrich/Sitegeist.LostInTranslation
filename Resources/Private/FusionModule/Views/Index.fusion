@@ -1,0 +1,26 @@
+prototype(Sitegeist.LostInTranslation:GlossaryController.Index) < prototype(Neos.Fusion:Component) {
+    isConfigurationValid = ${true}
+    glossaryJson = '[]'
+    languages = '[]'
+    requiredLanguages = '[]'
+    glossaryStatus = '[]'
+    csrfToken = ''
+
+    renderer = afx`
+        <div class="neos-content neos-container-fluid">
+            <div class="neos-row-fluid">
+                <p @if={!props.isConfigurationValid}>
+                    <i class="fas fa-exclamation-triangle" style="color:red;" ></i>&nbsp;{I18n.translate('Sitegeist.LostInTranslation:GlossaryModule:invalidConfiguration')}
+                </p>
+                <Sitegeist.LostInTranslation:Component.Glossary.App
+                    @if={props.isConfigurationValid}
+                    glossaryJson={props.glossaryJson}
+                    languages={props.languages}
+                    requiredLanguages={props.requiredLanguages}
+                    glossaryStatus={props.glossaryStatus}
+                    csrfToken={props.csrfToken}
+                />
+            </div>
+        </div>
+    `
+}
