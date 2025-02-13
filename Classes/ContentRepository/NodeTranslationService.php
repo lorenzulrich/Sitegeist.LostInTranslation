@@ -218,7 +218,7 @@ class NodeTranslationService
                 $propertyValue = $this->nodeUriPathSegmentGenerator->generateUriPathSegment(null, $propertyValue);
             }
 
-            if ($targetNode->getProperty($propertyName) != $propertyValue) {
+            if ($targetNode->getProperty($propertyName) !== $propertyValue) {
                 $targetNode->setProperty($propertyName, $propertyValue);
             }
         }
