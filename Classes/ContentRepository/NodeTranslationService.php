@@ -8,9 +8,10 @@ use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\ContentRepository\Domain\Model\Workspace;
 use Neos\ContentRepository\Domain\Service\Context;
 use Neos\ContentRepository\Domain\Service\ContextFactory;
+use Neos\ContentRepository\Domain\Service\ContextFactoryInterface;
 use Neos\Flow\Annotations as Flow;
 use Neos\Neos\Service\PublishingService;
-use Neos\Neos\Utility\NodeUriPathSegmentGenerator;
+use Neos\Neos\Utility\NodeSegmentGenerator;
 use Sitegeist\LostInTranslation\Domain\TranslatableProperty\TranslatablePropertyNamesFactory;
 use Sitegeist\LostInTranslation\Domain\TranslationServiceInterface;
 
@@ -72,7 +73,7 @@ class NodeTranslationService
 
     /**
      * @Flow\Inject
-     * @var ContextFactory
+     * @var ContextFactoryInterface
      */
     protected $contextFactory;
 
@@ -93,6 +94,14 @@ class NodeTranslationService
      * @var TranslatablePropertyNamesFactory
      */
     protected $translatablePropertiesFactory;
+
+    /**
+     * This is an internal property and should always be 'live'.
+     * Its only purpose is to be overridden in functional testing.
+     *
+     * @var string
+     */
+    protected $liveWorkspaceName = 'live';
 
     /**
      * @param NodeInterface $node
@@ -135,16 +144,16 @@ class NodeTranslationService
             return;
         }
 
-        if ($workspace->getName() !== 'live') {
+        if ($workspace->getName() !== $this->liveWorkspaceName) {
             return;
         }
 
         if ($this->skipAuthorizationChecks) {
             $this->securityContext->withoutAuthorizationChecks(function () use ($node) {
-                $this->syncNode($node);
+                $this->syncNode($node, $this->liveWorkspaceName);
             });
         } else {
-            $this->syncNode($node);
+            $this->syncNode($node, $this->liveWorkspaceName);
         }
     }
 
@@ -181,7 +190,8 @@ class NodeTranslationService
             return;
         }
 
-        $properties = (array)$sourceNode->getProperties();
+        // The "true" here is necessary to receive referenced nodes just as identifiers and not as objects!
+        $properties = (array)$sourceNode->getProperties(true);
         $propertiesToTranslate = [];
         foreach ($properties as $propertyName => $propertyValue) {
             if (empty($propertyValue) || !is_string($propertyValue)) {
@@ -203,13 +213,13 @@ class NodeTranslationService
         }
 
         foreach ($properties as $propertyName => $propertyValue) {
-            if ($targetNode->getProperty($propertyName) !== $propertyValue) {
-                $targetNode->setProperty($propertyName, $propertyValue);
+            // Make sure the uriPathSegment is valid
+            if ($propertyName === 'uriPathSegment' && !preg_match('/^[a-z0-9\-]+$/i', $propertyValue)) {
+                $propertyValue = $this->nodeUriPathSegmentGenerator->generateUriPathSegment(null, $propertyValue);
             }
 
-            // Make sure the uriPathSegment is valid
-            if ($targetNode->getProperty('uriPathSegment') && !preg_match('/^[a-z0-9\-]+$/i', $targetNode->getProperty('uriPathSegment'))) {
-                $targetNode->setProperty('uriPathSegment', $this->nodeUriPathSegmentGenerator->generateUriPathSegment(null, $targetNode->getProperty('uriPathSegment')));
+            if ($targetNode->getProperty($propertyName) !== $propertyValue) {
+                $targetNode->setProperty($propertyName, $propertyValue);
             }
         }
     }
@@ -306,5 +316,10 @@ class NodeTranslationService
                 }
             }
         }
+    }
+
+    public function resetContextCache(): void
+    {
+        $this->contextFirstLevelCache = [];
     }
 }
